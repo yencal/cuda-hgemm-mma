@@ -54,18 +54,18 @@ int main(int argc, char** argv)
             "00_cuBLAS", handle, M, N, K, alpha, d_A, d_B, beta, d_C));
 
         // 1a: MMADirect
-        printf("\nAutotuning 1a_MMADirect for N=%d\n", N);
+        printf("\nAutotuning 01a_MMADirect for N=%d\n", N);
         RunAutotune<MMADirectTag>(GetMMABasicVariants<MMADirect>(), N);
         CHECK_CUDA(cudaMemset(d_C, 0, (size_t)M * N * sizeof(__half)));
         results.push_back(RunBenchmark<Autotuned<MMADirectTag>>(
-            "1a_MMADirect", M, N, K, alpha, d_A, d_B, beta, d_C, d_C_ref));
+            "01a_MMADirect", M, N, K, alpha, d_A, d_B, beta, d_C, d_C_ref));
 
         // 1b: MMALdmatrix
-        printf("\nAutotuning 1b_MMALdmatrix for N=%d\n", N);
+        printf("\nAutotuning 01b_MMALdmatrix for N=%d\n", N);
         RunAutotune<MMALdmatrixTag>(GetMMABasicVariants<MMALdmatrix>(), N);
         CHECK_CUDA(cudaMemset(d_C, 0, (size_t)M * N * sizeof(__half)));
         results.push_back(RunBenchmark<Autotuned<MMALdmatrixTag>>(
-            "1b_MMALdmatrix", M, N, K, alpha, d_A, d_B, beta, d_C, d_C_ref));
+            "01b_MMALdmatrix", M, N, K, alpha, d_A, d_B, beta, d_C, d_C_ref));
 
         // 02: MMASwizzle
         printf("\nAutotuning 02_MMASwizzle for N=%d\n", N);
