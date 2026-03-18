@@ -16,6 +16,7 @@
 #include "02_mma_swizzle.cuh"
 #include "03_mma_multistage.cuh"
 #include "04_mma_pipelining.cuh"
+#include "05_mma_final.cuh"
 
 int main(int argc, char** argv) {
     if (argc != 2) {
@@ -26,6 +27,7 @@ int main(int argc, char** argv) {
         printf("  2  = MMASwizzle\n");
         printf("  3  = MMAMultistage\n");
         printf("  4  = MMAPipelining\n");
+        printf("  5  = MMAFinal\n");
         return 1;
     }
 
@@ -62,6 +64,8 @@ int main(int argc, char** argv) {
         MMAMultistage<128,128,64, 64,64, 2>::Run(M,N,K, alpha, d_A, d_B, beta, d_C);
     else if (strcmp(kernel, "4") == 0)
         MMAPipelining<128,128,64, 64,64, 3>::Run(M,N,K, alpha, d_A, d_B, beta, d_C);
+    else if (strcmp(kernel, "5") == 0)
+        MMAFinal<128,128,64, 64,64, 2, true, 16>::Run(M,N,K, alpha, d_A, d_B, beta, d_C);
     else { printf("Unknown kernel: %s\n", kernel); return 1; }
 
     CHECK_CUDA(cudaDeviceSynchronize());

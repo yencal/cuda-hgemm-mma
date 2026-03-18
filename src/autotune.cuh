@@ -17,6 +17,7 @@
 #include "02_mma_swizzle.cuh"
 #include "03_mma_multistage.cuh"
 #include "04_mma_pipelining.cuh"
+#include "05_mma_final.cuh"
 
 struct TuneConfig {
     const char* name;
@@ -28,6 +29,7 @@ struct MMALdmatrixTag {};
 struct MMASwizzleTag {};
 struct MMAMultistageTag {};
 struct MMAPipeliningTag {};
+struct MMAFinalTag {};
 
 template<typename Tag>
 struct Autotuned {
@@ -46,6 +48,11 @@ struct Autotuned {
 #define TUNE_CONFIG_MULTISTAGE(Kernel, BM, BN, BK, WM, WN, STAGES) \
     TuneConfig{#BM "x" #BN "x" #BK "_" #WM "x" #WN "_S" #STAGES, \
                Kernel<BM, BN, BK, WM, WN, STAGES>::Run}
+
+#define TUNE_CONFIG_FINAL(Kernel, BM, BN, BK, WM, WN, STAGES, USE_SWIZZLE, BLOCK_STRIDE) \
+    TuneConfig{#BM "x" #BN "x" #BK "_" #WM "x" #WN "_S" #STAGES \
+               "_sw" #USE_SWIZZLE "_bs" #BLOCK_STRIDE, \
+               Kernel<BM, BN, BK, WM, WN, STAGES, USE_SWIZZLE, BLOCK_STRIDE>::Run}
 
 // =========================================================================
 // Kernels 1a, 1b: Direct / Ldmatrix (no swizzle, BK can be 32 or 64)
@@ -106,6 +113,30 @@ inline std::vector<TuneConfig> GetMMAMultistageVariants() {
         TUNE_CONFIG_MULTISTAGE(Kernel, 128, 128, 64, 32, 32, 2),
         TUNE_CONFIG_MULTISTAGE(Kernel, 128, 128, 64, 32, 32, 3),
         TUNE_CONFIG_MULTISTAGE(Kernel, 256, 128, 64, 64, 32, 2),
+    };
+}
+
+// =========================================================================
+// Kernel 05: Final (pipelining + block swizzle)
+// =========================================================================
+template<template<int, int, int, int, int, int, bool, int> class Kernel>
+inline std::vector<TuneConfig> GetMMAFinalVariants() {
+    return {
+        // 256 threads, 3 stages (proven best for large N in kernel 04)
+        TUNE_CONFIG_FINAL(Kernel, 256, 128, 64, 64, 64, 3, false, 16),
+        TUNE_CONFIG_FINAL(Kernel, 256, 128, 64, 64, 64, 3, true,  16),
+        // 128 threads
+        TUNE_CONFIG_FINAL(Kernel, 128, 128, 64, 64, 64, 2, false, 16),
+        TUNE_CONFIG_FINAL(Kernel, 128, 128, 64, 64, 64, 2, true,  16),
+        TUNE_CONFIG_FINAL(Kernel, 128, 128, 64, 64, 64, 3, false, 16),
+        TUNE_CONFIG_FINAL(Kernel, 128, 128, 64, 64, 64, 3, true,  16),
+        // Wider N tile
+        TUNE_CONFIG_FINAL(Kernel, 128, 256, 64, 64, 64, 2, true,  16),
+        // 256 threads, 2 stages
+        TUNE_CONFIG_FINAL(Kernel, 256, 128, 64, 64, 64, 2, true,  16),
+        // 512 threads
+        TUNE_CONFIG_FINAL(Kernel, 128, 128, 64, 32, 32, 3, true,  16),
+        TUNE_CONFIG_FINAL(Kernel, 256, 128, 64, 64, 32, 2, true,  16),
     };
 }
 

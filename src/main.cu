@@ -88,6 +88,13 @@ int main(int argc, char** argv)
         results.push_back(RunBenchmark<Autotuned<MMAPipeliningTag>>(
             "04_MMAPipelining", M, N, K, alpha, d_A, d_B, beta, d_C, d_C_ref));
 
+        // 05: MMAFinal
+        printf("\nAutotuning 05_MMAFinal for N=%d\n", N);
+        RunAutotune<MMAFinalTag>(GetMMAFinalVariants<MMAFinal>(), N);
+        CHECK_CUDA(cudaMemset(d_C, 0, (size_t)M * N * sizeof(__half)));
+        results.push_back(RunBenchmark<Autotuned<MMAFinalTag>>(
+            "05_MMAFinal", M, N, K, alpha, d_A, d_B, beta, d_C, d_C_ref));
+
         CHECK_CUDA(cudaFree(d_A));
         CHECK_CUDA(cudaFree(d_B));
         CHECK_CUDA(cudaFree(d_C));
