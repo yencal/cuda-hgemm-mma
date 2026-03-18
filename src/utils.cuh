@@ -69,6 +69,23 @@ inline void FillRandomDevice(__half* d_ptr, size_t n, unsigned long long seed = 
     CHECK_CUDA(cudaFree(d_tmp));
 }
 
+struct BenchmarkResult {
+    std::string label;
+    int N;
+    float time_ms;
+    float tflops;
+};
+
+inline void WriteCSV(const std::vector<BenchmarkResult>& results, const std::string& filename)
+{
+    std::ofstream file(filename);
+    file << "Label,N,TimeMs,TFLOPS\n";
+    for (const auto& r : results) {
+        file << "\"" << r.label << "\"," << r.N << "," << r.time_ms << "," << r.tflops << "\n";
+    }
+    file.close();
+}
+
 inline bool VerifyGEMM(const __half* d_C, const __half* d_C_ref, int size, float threshold = 5.0f)
 {
     std::vector<__half> h_C(size);
@@ -96,4 +113,92 @@ inline bool VerifyGEMM(const __half* d_C, const __half* d_C_ref, int size, float
     }
     printf(" OK\n");
     return true;
+}
+
+template<typename Kernel>
+BenchmarkResult RunBenchmark(
+    const char* label,
+    int M, int N, int K,
+    __half alpha, const __half* d_A, const __half* d_B,
+    __half beta, __half* d_C, const __half* d_C_ref,
+    int warmup_runs = 2,
+    int timed_runs = 10)
+{
+    Kernel::Run(M, N, K, alpha, d_A, d_B, beta, d_C);
+    CHECK_CUDA(cudaDeviceSynchronize());
+    if (!VerifyGEMM(d_C, d_C_ref, M * N)) {
+        std::cerr << "FAILED: " << label << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < warmup_runs; ++i) {
+        Kernel::Run(M, N, K, alpha, d_A, d_B, beta, d_C);
+    }
+    CHECK_CUDA(cudaDeviceSynchronize());
+
+    cudaEvent_t start, stop;
+    CHECK_CUDA(cudaEventCreate(&start));
+    CHECK_CUDA(cudaEventCreate(&stop));
+
+    CHECK_CUDA(cudaEventRecord(start));
+    for (int i = 0; i < timed_runs; ++i) {
+        Kernel::Run(M, N, K, alpha, d_A, d_B, beta, d_C);
+    }
+    CHECK_CUDA(cudaEventRecord(stop));
+    CHECK_CUDA(cudaEventSynchronize(stop));
+
+    float ms;
+    CHECK_CUDA(cudaEventElapsedTime(&ms, start, stop));
+    float avg_ms = ms / timed_runs;
+
+    double flops = 2.0 * M * N * K;
+    float tflops = static_cast<float>((flops / (avg_ms / 1000.0)) / 1e12);
+
+    CHECK_CUDA(cudaEventDestroy(start));
+    CHECK_CUDA(cudaEventDestroy(stop));
+
+    std::cout << label << ": " << avg_ms << " ms, " << tflops << " TFLOPS [PASS]" << std::endl;
+
+    return BenchmarkResult{label, N, avg_ms, tflops};
+}
+
+template<typename CuBLASKernel>
+BenchmarkResult RunCuBLASBenchmark(
+    const char* label,
+    cublasHandle_t handle,
+    int M, int N, int K,
+    __half alpha, const __half* d_A, const __half* d_B,
+    __half beta, __half* d_C,
+    int warmup_runs = 2,
+    int timed_runs = 10)
+{
+    for (int i = 0; i < warmup_runs; ++i) {
+        CuBLASKernel::Run(handle, M, N, K, alpha, d_A, d_B, beta, d_C);
+    }
+    CHECK_CUDA(cudaDeviceSynchronize());
+
+    cudaEvent_t start, stop;
+    CHECK_CUDA(cudaEventCreate(&start));
+    CHECK_CUDA(cudaEventCreate(&stop));
+
+    CHECK_CUDA(cudaEventRecord(start));
+    for (int i = 0; i < timed_runs; ++i) {
+        CuBLASKernel::Run(handle, M, N, K, alpha, d_A, d_B, beta, d_C);
+    }
+    CHECK_CUDA(cudaEventRecord(stop));
+    CHECK_CUDA(cudaEventSynchronize(stop));
+
+    float ms;
+    CHECK_CUDA(cudaEventElapsedTime(&ms, start, stop));
+    float avg_ms = ms / timed_runs;
+
+    double flops = 2.0 * M * N * K;
+    float tflops = static_cast<float>((flops / (avg_ms / 1000.0)) / 1e12);
+
+    CHECK_CUDA(cudaEventDestroy(start));
+    CHECK_CUDA(cudaEventDestroy(stop));
+
+    std::cout << label << ": " << avg_ms << " ms, " << tflops << " TFLOPS [REF]" << std::endl;
+
+    return BenchmarkResult{label, N, avg_ms, tflops};
 }

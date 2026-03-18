@@ -2,6 +2,7 @@
 *.o
 *.exe
 profile
+hgemm_bench
 
 # Data / temp files
 *.csv
