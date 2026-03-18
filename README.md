@@ -36,24 +36,23 @@ make profile
 | 03_MMAMultistage | + Multi-stage async pipeline (cp.async, overlapped tile loads) |
 | 04_MMAPipelining | + Fragment double buffering, interleaved async copy at k-loop midpoint |
 | 05_MMAFinal | + Block swizzle for L2 cache locality, autotuning |
-
 ## Results
 
 **NVIDIA A100-SXM4 (40 GB)**
 
-The final kernel achieves **88% of cuBLAS** performance (255 vs 289 TFLOPS at N=8192).
+The final kernel achieves **88% of cuBLAS** performance (256 vs 289 TFLOPS at N=8192).
 
 ![HGEMM Performance](figures/mma_hgemm_plot_a100.png)
 
 | Kernel | N=4096 | N=8192 | N=16384 | % cuBLAS (N=8192) |
 |--------|--------|--------|---------|-------------------|
-| cuBLAS | 273 | 289 | 279 | 100% |
-| 01a_MMADirect | 56 | 56 | 56 | 19% |
-| 01b_MMALdmatrix | 71 | 75 | 75 | 26% |
-| 02_MMASwizzle | 194 | 210 | 166 | 73% |
-| 03_MMAMultistage | 230 | 245 | 208 | 85% |
-| 04_MMAPipelining | 234 | 255 | 237 | 88% |
-| 05_MMAFinal | 236 | 255 | 236 | 88% |
+| cuBLAS | 273 | 289 | 280 | 100% |
+| 01a_MMADirect | 70 | 75 | 76 | 26% |
+| 01b_MMALdmatrix | 68 | 73 | 73 | 25% |
+| 02_MMASwizzle | 193 | 211 | 166 | 73% |
+| 03_MMAMultistage | 230 | 244 | 207 | 84% |
+| 04_MMAPipelining | 234 | 254 | 228 | 88% |
+| 05_MMAFinal | 236 | 256 | 235 | 88% |
 
 ## Blog Post
 
