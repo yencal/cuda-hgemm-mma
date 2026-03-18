@@ -51,17 +51,17 @@ def draw_reg_table(ax, title, subtitle, reg_labels):
 
     # Title
     ax.text(5, 1.2, title, ha="center", va="center",
-            fontsize=11, fontweight="bold")
+            fontsize=14, fontweight="bold")
     ax.text(5, 0.6, subtitle, ha="center", va="center",
-            fontsize=8, fontstyle="italic", color="0.35")
+            fontsize=10, fontstyle="italic", color="0.35")
 
     header_y = -0.1
     ax.text(1.5, header_y, "Register", ha="center", va="center",
-            fontsize=8, fontweight="bold")
+            fontsize=10, fontweight="bold")
     ax.text(4.5, header_y, "lo 16 bits (i even)", ha="center", va="center",
-            fontsize=8, fontweight="bold")
+            fontsize=10, fontweight="bold")
     ax.text(7.5, header_y, "hi 16 bits (i odd)", ha="center", va="center",
-            fontsize=8, fontweight="bold")
+            fontsize=10, fontweight="bold")
 
     colors = ["#e8f4fd", "#ffffff"]
     for idx, (reg_name, lo, hi) in enumerate(reg_labels):
@@ -76,11 +76,11 @@ def draw_reg_table(ax, title, subtitle, reg_labels):
         ax.add_patch(rect)
 
         ax.text(1.5, y, reg_name, ha="center", va="center",
-                fontsize=9, fontweight="bold", family="monospace")
+                fontsize=11, fontweight="bold", family="monospace")
         ax.text(4.5, y, lo, ha="center", va="center",
-                fontsize=8.5, family="monospace")
+                fontsize=10, family="monospace")
         ax.text(7.5, y, hi, ha="center", va="center",
-                fontsize=8.5, family="monospace")
+                fontsize=10, family="monospace")
 
 
 def main():

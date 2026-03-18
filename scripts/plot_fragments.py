@@ -98,21 +98,19 @@ def plot_fragment(thread_map, elem_map, title, out_path):
             lane = thread_map[r, c]
             idx = elem_map[r, c]
             label = f"T{lane}:i{idx}"
-            # rough luminance check for text contrast
-            rgba = cmap(norm(lane))
-            lum = 0.299 * rgba[0] + 0.587 * rgba[1] + 0.114 * rgba[2]
-            color = "white" if lum < 0.45 else "black"
             ax.text(c, r, label, ha="center", va="center",
-                    fontsize=7, fontweight="medium", color=color)
+                    fontsize=10, fontweight="medium", color="black")
 
     ax.set_xticks(range(cols))
     ax.set_yticks(range(rows))
-    ax.set_xlabel("Column")
-    ax.set_ylabel("Row")
-    ax.set_title(title, fontsize=12, pad=10)
+    ax.set_xlabel("Column", fontsize=14)
+    ax.set_ylabel("Row", fontsize=14)
+    ax.tick_params(labelsize=12)
+    ax.set_title(title, fontsize=16, pad=12)
 
     cbar = plt.colorbar(im, ax=ax, ticks=range(0, 32, 4), shrink=0.8)
-    cbar.set_label("Thread (lane) ID")
+    cbar.set_label("Thread (lane) ID", fontsize=13)
+    cbar.ax.tick_params(labelsize=11)
 
     plt.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight")
