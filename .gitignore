@@ -1,0 +1,14 @@
+# Build artifacts
+*.o
+*.exe
+profile
+
+# Data / temp files
+*.csv
+*.swp
+
+# NCU profiling output
+ncu_profiles/
+
+# macOS
+.DS_Store
