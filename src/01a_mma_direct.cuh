@@ -13,7 +13,6 @@
 
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
-#include <cuda_pipeline.h>
 
 #include "fragment.cuh"
 #include "mma_ops.cuh"
@@ -70,8 +69,8 @@ __global__ void mma_direct_kernel(
         // Global -> Shared (cp.async)
         loadTileA_async<BM, BK, NUM_THREADS>(A, As, K, tid);
         loadTileB_async<BK, BN, NUM_THREADS>(B, Bs, N, tid);
-        __pipeline_commit();
-        __pipeline_wait_prior(0);
+        cp_async_commit();
+        cp_async_wait<0>();
         __syncthreads();
 
         // Compute: iterate over BK in steps of MMA_K

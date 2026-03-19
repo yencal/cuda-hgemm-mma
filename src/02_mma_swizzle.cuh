@@ -19,7 +19,6 @@
 
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
-#include <cuda_pipeline.h>
 
 #include "fragment.cuh"
 #include "mma_ops.cuh"
@@ -86,8 +85,8 @@ __global__ void mma_swizzle_kernel(
         // Global -> Shared with swizzle
         loadTileA_async_swizzled<BM, BK, NUM_THREADS, SwzA>(A, As, K, tid);
         loadTileB_async_swizzled<BK, BN, NUM_THREADS, SwzB>(B, Bs, N, tid);
-        __pipeline_commit();
-        __pipeline_wait_prior(0);
+        cp_async_commit();
+        cp_async_wait<0>();
         __syncthreads();
 
         #pragma unroll

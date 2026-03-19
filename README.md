@@ -46,13 +46,13 @@ The final kernel achieves **88% of cuBLAS** performance (256 vs 289 TFLOPS at N=
 
 | Kernel | N=4096 | N=8192 | N=16384 | % cuBLAS (N=8192) |
 |--------|--------|--------|---------|-------------------|
-| cuBLAS | 273 | 289 | 280 | 100% |
+| cuBLAS | 274 | 289 | 285 | 100% |
 | 01a_MMADirect | 70 | 75 | 76 | 26% |
 | 01b_MMALdmatrix | 68 | 73 | 73 | 25% |
-| 02_MMASwizzle | 193 | 211 | 166 | 73% |
-| 03_MMAMultistage | 230 | 244 | 207 | 84% |
-| 04_MMAPipelining | 234 | 254 | 228 | 88% |
-| 05_MMAFinal | 236 | 256 | 235 | 88% |
+| 02_MMASwizzle | 193 | 212 | 166 | 73% |
+| 03_MMAMultistage | 231 | 245 | 214 | 85% |
+| 04_MMAPipelining | 235 | 255 | 237 | 88% |
+| 05_MMAFinal | 236 | 256 | 242 | 88% |
 
 ## Blog Post
 

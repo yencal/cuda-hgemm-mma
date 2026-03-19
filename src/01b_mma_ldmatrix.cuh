@@ -14,7 +14,6 @@
 
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
-#include <cuda_pipeline.h>
 
 #include "fragment.cuh"
 #include "mma_ops.cuh"
@@ -67,8 +66,8 @@ __global__ void mma_ldmatrix_kernel(
     for (int tileK = 0; tileK < K; tileK += BK) {
         loadTileA_async<BM, BK, NUM_THREADS>(A, As, K, tid);
         loadTileB_async<BK, BN, NUM_THREADS>(B, Bs, N, tid);
-        __pipeline_commit();
-        __pipeline_wait_prior(0);
+        cp_async_commit();
+        cp_async_wait<0>();
         __syncthreads();
 
         #pragma unroll

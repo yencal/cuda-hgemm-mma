@@ -14,6 +14,32 @@
 #include "smem_swizzle.cuh"
 
 // =========================================================================
+// PTX async copy helpers
+// cp.async.cg = cache-global (bypasses L1, uses L2 only)
+// =========================================================================
+
+// Copy 16 bytes (float4) from global to shared memory
+__device__ __forceinline__
+void cp_async_cg(void* smem_ptr, const void* gmem_ptr) {
+    uint32_t smem_addr = __cvta_generic_to_shared(smem_ptr);
+    asm volatile(
+        "cp.async.cg.shared.global [%0], [%1], 16;\n"
+        :: "r"(smem_addr), "l"(gmem_ptr)
+    );
+}
+
+__device__ __forceinline__
+void cp_async_commit() {
+    asm volatile("cp.async.commit_group;\n" ::);
+}
+
+template<int N>
+__device__ __forceinline__
+void cp_async_wait() {
+    asm volatile("cp.async.wait_group %0;\n" :: "n"(N));
+}
+
+// =========================================================================
 // Tile Loading A: cp.async, float4 = 16 bytes = 8 halves per copy
 // A is [M,K] row-major, As is [BM][BK] in shared memory
 // =========================================================================
@@ -37,10 +63,9 @@ __device__ void loadTileA_async(
         uint idx = tid + i * NUM_THREADS;
         uint row = idx / (BK / 8);
         uint col8 = idx % (BK / 8);
-        __pipeline_memcpy_async(
+        cp_async_cg(
             &As[row * BK + col8 * 8],
-            &A[row * K + col8 * 8],
-            sizeof(float4)
+            &A[row * K + col8 * 8]
         );
     }
 }
@@ -69,10 +94,9 @@ __device__ void loadTileB_async(
         uint idx = tid + i * NUM_THREADS;
         uint row = idx / (BN / 8);
         uint col8 = idx % (BN / 8);
-        __pipeline_memcpy_async(
+        cp_async_cg(
             &Bs[row * BN + col8 * 8],
-            &B[row * N + col8 * 8],
-            sizeof(float4)
+            &B[row * N + col8 * 8]
         );
     }
 }
@@ -104,10 +128,9 @@ __device__ void loadTileA_async_swizzled(
         uint col8 = idx % (BK / 8);
         int byte_offset = (row * BK + col8 * 8) * sizeof(__half);
         int swizzled = SwizzleT::apply(byte_offset);
-        __pipeline_memcpy_async(
-            reinterpret_cast<__half*>(reinterpret_cast<char*>(As) + swizzled),
-            &A[row * K + col8 * 8],
-            sizeof(float4)
+        cp_async_cg(
+            reinterpret_cast<char*>(As) + swizzled,
+            &A[row * K + col8 * 8]
         );
     }
 }
@@ -133,10 +156,9 @@ __device__ void loadTileB_async_swizzled(
         uint col8 = idx % (BN / 8);
         int byte_offset = (row * BN + col8 * 8) * sizeof(__half);
         int swizzled = SwizzleT::apply(byte_offset);
-        __pipeline_memcpy_async(
-            reinterpret_cast<__half*>(reinterpret_cast<char*>(Bs) + swizzled),
-            &B[row * N + col8 * 8],
-            sizeof(float4)
+        cp_async_cg(
+            reinterpret_cast<char*>(Bs) + swizzled,
+            &B[row * N + col8 * 8]
         );
     }
 }

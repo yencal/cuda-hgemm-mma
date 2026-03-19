@@ -15,8 +15,6 @@
 
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
-#include <cuda_pipeline.h>
-
 #include "fragment.cuh"
 #include "mma_ops.cuh"
 #include "smem_swizzle.cuh"
@@ -96,10 +94,10 @@ __global__ void mma_pipelining_kernel(
             A + s * BK, As + s * A_STAGE_SIZE, K, tid);
         loadTileB_async_swizzled<BK, BN, NUM_THREADS, SwzB>(
             B + s * BK * N, Bs + s * B_STAGE_SIZE, N, tid);
-        __pipeline_commit();
+        cp_async_commit();
     }
 
-    __pipeline_wait_prior(0);
+    cp_async_wait<0>();
     __syncthreads();
 
     // Load initial k=0 fragments from stage 0
@@ -146,16 +144,16 @@ __global__ void mma_pipelining_kernel(
                     A + loadTile * BK, As + loadStage * A_STAGE_SIZE, K, tid);
                 loadTileB_async_swizzled<BK, BN, NUM_THREADS, SwzB>(
                     B + loadTile * BK * N, Bs + loadStage * B_STAGE_SIZE, N, tid);
-                __pipeline_commit();
+                cp_async_commit();
                 ++loadTile;
             }
         }
 
         // Barrier: ensure next tile's data is ready
         if (loadTile < numTiles) {
-            __pipeline_wait_prior(STAGES - 2);
+            cp_async_wait<STAGES - 2>();
         } else {
-            __pipeline_wait_prior(0);
+            cp_async_wait<0>();
         }
         __syncthreads();
 

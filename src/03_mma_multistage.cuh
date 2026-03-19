@@ -13,8 +13,6 @@
 
 #include <cuda_runtime.h>
 #include <cuda_fp16.h>
-#include <cuda_pipeline.h>
-
 #include "fragment.cuh"
 #include "mma_ops.cuh"
 #include "smem_swizzle.cuh"
@@ -87,7 +85,7 @@ __global__ void mma_multistage_kernel(
         __half* Bs_stage = Bs + s * B_STAGE_SIZE;
         loadTileA_async_swizzled<BM, BK, NUM_THREADS, SwzA>(A + s * BK, As_stage, K, tid);
         loadTileB_async_swizzled<BK, BN, NUM_THREADS, SwzB>(B + s * BK * N, Bs_stage, N, tid);
-        __pipeline_commit();
+        cp_async_commit();
     }
 
     // ====== MAIN LOOP ======
@@ -103,15 +101,15 @@ __global__ void mma_multistage_kernel(
             __half* Bs_stage = Bs + loadStage * B_STAGE_SIZE;
             loadTileA_async_swizzled<BM, BK, NUM_THREADS, SwzA>(A + loadTile * BK, As_stage, K, tid);
             loadTileB_async_swizzled<BK, BN, NUM_THREADS, SwzB>(B + loadTile * BK * N, Bs_stage, N, tid);
-            __pipeline_commit();
+            cp_async_commit();
             ++loadTile;
         }
 
         // Wait for compute stage data
         if (loadTile < numTiles) {
-            __pipeline_wait_prior(STAGES - 1);
+            cp_async_wait<STAGES - 1>();
         } else {
-            __pipeline_wait_prior(0);
+            cp_async_wait<0>();
         }
         __syncthreads();
 
