@@ -57,4 +57,4 @@ The final kernel achieves **88% of cuBLAS** performance (256 vs 289 TFLOPS at N=
 ## Blog Post
 
 For a detailed walkthrough of the optimization techniques, see the accompanying blog post:
-*(coming soon)*
+[Tensor Core HGEMM: Dropping to PTX mma.sync](https://yencal.github.io/gpu-hgemm-mma/)
